@@ -5,6 +5,9 @@ TagManager:
   serializedVersion: 2
   tags:
   - OrbitObject
+  - Red
+  - Yellow
+  - Blue
   layers:
   - Default
   - TransparentFX

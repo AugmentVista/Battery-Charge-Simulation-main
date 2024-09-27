@@ -16,8 +16,8 @@ public class WrapAround : MonoBehaviour
 
         // Get the object's size based on its renderer bounds
         SpriteRenderer renderer = GetComponent<SpriteRenderer>();
-        objectWidth = renderer.bounds.size.x / 2f;  // Half the width
-        objectHeight = renderer.bounds.size.y / 2f; // Half the height
+        objectWidth = renderer.bounds.size.x ;  // Half the width
+        objectHeight = renderer.bounds.size.y ; // Half the height
     }
 
     void FixedUpdate()

@@ -11,7 +11,8 @@ public class Orbit : MonoBehaviour
     public GameObject GoalTwo;
     public GameObject GoalThree;
 
-    private float speed = 10.0f;
+    private float speed = 4.0f;
+    private float maxSpeed = 10.0f;
 
     private Vector2 target;
     public Vector2 startingPosition;
@@ -68,9 +69,9 @@ public class Orbit : MonoBehaviour
 
     private void Update()
     {
-        if (rb.velocity.magnitude > startVelocity.magnitude * 5)
+        if (rb.velocity.magnitude > maxSpeed)
         {
-            rb.velocity = Vector2.zero; // Set the velocity to zero to stop movement
+            rb.velocity = rb.velocity.normalized * maxSpeed; // Clamp the velocity to maxSpeed
         }
 
         if (hasTarget && !isFrozen)
@@ -84,7 +85,7 @@ public class Orbit : MonoBehaviour
             }
         }
         Debug.Log("Current Position: " + transform.position);
-        //FreezeCheck();
+        FreezeCheck();
     }
 
     //void OnGUI()
@@ -101,27 +102,27 @@ public class Orbit : MonoBehaviour
     {
         yield return new WaitForSeconds(2);
         startVelocity = rb.velocity;
-        //timerFinished = true;
+        timerFinished = true;
     }
 
     private void FreezeCheck()
     {
-    //    if (!isFrozen && availablePositions.Count > 0 && timerFinished)
-    //    {
-    //        Vector2 currentPosition = transform.position;
+        if (!isFrozen && availablePositions.Count > 0 && timerFinished)
+        {
+            Vector2 currentPosition = transform.position;
 
-    //        foreach (Vector2 position in availablePositions)
-    //        {
-    //            if (Vector2.Distance(currentPosition, position) < 0.05f) // Doesn't need to be exact just very close
-    //            {
-    //                rb.velocity = Vector2.zero;
-    //                rb.constraints = RigidbodyConstraints2D.FreezePositionX | RigidbodyConstraints2D.FreezePositionY; // Freeze position
-    //                isFrozen = true; 
-    //                availablePositions.Remove(position); // Remove to prevent conflict
-    //                break; 
-    //            }
-    //        }
-    //    }
+            foreach (Vector2 position in availablePositions)
+            {
+                if (Vector2.Distance(currentPosition, position) < 0.05f) // Doesn't need to be exact just very close
+                {
+                    rb.velocity = Vector2.zero;
+                    rb.constraints = RigidbodyConstraints2D.FreezePositionX | RigidbodyConstraints2D.FreezePositionY; // Freeze position
+                    isFrozen = true;
+                    availablePositions.Remove(position); // Remove to prevent conflict
+                    break;
+                }
+            }
+        }
     }
 
 
@@ -173,8 +174,8 @@ public class Orbit : MonoBehaviour
                             // Choose a random object in list of collided objects to be the new target
                             int randomIndex = Random.Range(0, collidedObjects.Count);
                             target = collidedObjects[randomIndex].transform.position;
-                            rb.velocity = rb.velocity * 0.5f;
-                            rbCollidedWith.velocity = rbCollidedWith.velocity * 0.5f;
+                            rb.velocity = rb.velocity * 1f;
+                            rbCollidedWith.velocity = rbCollidedWith.velocity * 1f;
 
                             transform.parent = collidedObject.transform;
                         }
