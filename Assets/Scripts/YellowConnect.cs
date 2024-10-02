@@ -10,25 +10,39 @@ public class YellowConnect : MonoBehaviour
 
     private void Awake()
     {
-        rb = GetComponent<Rigidbody2D>(); // Initialize the Rigidbody2D in Awake
+        rb = GetComponent<Rigidbody2D>();
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (collision.gameObject.CompareTag("Yellow") && !Connected)
+        if (collision.gameObject.CompareTag("Yellow") && !Connected) // wants to connect to yellow
         {
-            Rigidbody2D rbCollidedWith = collision.GetComponent<Rigidbody2D>(); // Get the Rigidbody2D of the collided object
+            Rigidbody2D rbCollidedWith = collision.GetComponent<Rigidbody2D>();
             Vector2 currentPosition = transform.position;
             Vector2 otherPosition = collision.transform.position;
 
-            rbCollidedWith.velocity = Vector2.zero; // Set the collided object's velocity to zero
-            rb.velocity = Vector2.zero; // Set the current object's velocity to zero
+            rbCollidedWith.velocity = Vector2.zero;
+            rb.velocity = Vector2.zero;
 
             if (Vector2.Distance(currentPosition, otherPosition) < 0.05f)
             {
-                collision.transform.SetParent(transform); // Parent the collided object
-                Connected = true; // Mark as connected
-                rb.velocity = rb.velocity * speed; // Optional: reset the velocity if desired
+                collision.transform.SetParent(transform);
+                Connected = true;
+                rb.velocity = rb.velocity * speed;
+            }
+        }
+
+        if (collision.gameObject.CompareTag("Green") && Connected) // wants to avoid green
+        {
+            Rigidbody2D rbCollidedWith = collision.GetComponent<Rigidbody2D>();
+            Vector2 currentPosition = transform.position;
+            Vector2 otherPosition = collision.transform.position;
+
+            rbCollidedWith.velocity = Vector2.zero;
+
+            if (Vector2.Distance(currentPosition, otherPosition) < 0.05f)
+            {
+                rb.velocity = rb.velocity * -1.5f;
             }
         }
     }

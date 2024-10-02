@@ -11,7 +11,7 @@ public class AreaEffectors : MonoBehaviour
     public Image slider;
 
     private float minForceMagnitude = -0.0f;
-    private float maxForceMagnitude = 50.0f;
+    private float maxForceMagnitude = 200.0f;
 
     void Start()
     {
