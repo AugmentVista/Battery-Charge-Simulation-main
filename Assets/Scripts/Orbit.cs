@@ -4,85 +4,99 @@ using UnityEngine;
 
 public class Orbit : MonoBehaviour
 {
-    // List of collided objects
-    private List<GameObject> collidedObjects = new List<GameObject>();
+    public ColorsTargetingSystem newColorTarget;
+    public ColorsTargetingSystem[] allColorTargets;
 
-    private float speed = 4.0f;
-    private float numClicks = 0.0f;
-    private float maxSpeed = 10.0f;
+    private List<GameObject> orbitObjectedCollidedWith = new List<GameObject>();
+
+    private float speed = 20.0f;
+    private float numClicks = 1.0f;
+    private float MaxSpeed = 40.0f;
+    private float velocityX;
+    private float velocityY;
+    public float targetGoalRadius = 0.05f;
+    public float turningSpeed = 0.5f;
 
     private Vector2 target;
     public Vector2 startingPosition;
+    private Vector2 startVelocity;
 
     private Rigidbody2D rb;
-    private Rigidbody2D rbCollidedWith;
-    private Vector2 startVelocity;
 
     private bool timerFinished;
     private bool hasTarget;
-    private bool isFrozen = false;
 
-    public float targetGoalRadius;
+    public List<string> colorTags; // Adjusted to a List for flexibility
+    public ColorTags currentColorTag;
 
-
-    // Static list to hold starting positions across all instances
-    private static List<Vector2> availablePositions = new List<Vector2>();
-
+    private static List<Vector2> startPositionsList = new List<Vector2>();
 
     private void Start()
     {
         startingPosition = transform.position;
         rb = GetComponent<Rigidbody2D>();
-        SetInitialDirection();
+        ApplyRandomDirection();
 
+        startPositionsList.Add(startingPosition); // add each orbit object's start pos to the collective static list
         target = Vector2.zero;
-        hasTarget = false;
-
-        availablePositions.Add(startingPosition);
         startVelocity = rb.velocity;
-        StartCoroutine(ManagePositions());
+
+        colorTags = new List<string> { "Red", "Blue", "Green", "Yellow" };
+        currentColorTag = (ColorTags)Random.Range(0, colorTags.Count); // Choose a random starting color tag
+
+        // Start the coroutine to change the color tag
+        StartCoroutine(ChangeColorTag());
     }
 
-    private void SetInitialDirection()
+    private IEnumerator ChangeColorTag()
+    {
+        while (true)
+        {
+            // Wait for 4 seconds
+            yield return new WaitForSeconds(4.0f);
+
+            // Change to the next color tag
+            currentColorTag = (ColorTags)(((int)currentColorTag + 1) % colorTags.Count); // Cycle through the color tags
+        }
+    }
+
+    private void ApplyRandomDirection()
     {
         int randomDirection = Random.Range(0, 4);
         switch (randomDirection)
         {
             case 0:
-                target = 
-                rb.velocity = Vector2.left * (speed);
+                rb.velocity = Vector2.left * (speed + numClicks);
                 break;
             case 1:
-                rb.velocity = Vector2.right * speed;
+                rb.velocity = Vector2.right * (speed + numClicks);
                 break;
             case 2:
-                rb.velocity = Vector2.up * speed;
+                rb.velocity = Vector2.up * (speed + numClicks);
                 break;
             case 3:
-                rb.velocity = Vector2.down * speed;
+                rb.velocity = Vector2.down * (speed + numClicks);
                 break;
         }
     }
 
-    private void Update()
+    private void FixedUpdate()
     {
-        if (rb.velocity.magnitude > maxSpeed)
+        if (rb.velocity.magnitude > MaxSpeed)
         {
-            rb.velocity = rb.velocity.normalized * maxSpeed; // Clamp the velocity to maxSpeed
+            rb.velocity = rb.velocity.normalized * MaxSpeed;
         }
 
-        if (hasTarget && !isFrozen)
+        if (hasTarget)
         {
-            MoveTowardsTarget();
+            LerpTowardsTarget();
 
             if (Vector2.Distance(transform.position, target) <= targetGoalRadius)
             {
-                ReverseDirection();
                 hasTarget = false; // clear target when reached
             }
         }
-        Debug.Log("Current Position: " + transform.position);
-        FreezeCheck();
+        OccupyingAnyStartPosition();
     }
 
     void OnGUI()
@@ -91,74 +105,128 @@ public class Orbit : MonoBehaviour
         {
             numClicks++;
             speed = speed + numClicks;
-            SetInitialDirection();
+            ApplyRandomDirection();
         }
     }
 
-    private IEnumerator ManagePositions()
+    private void OccupyingAnyStartPosition()
     {
-        yield return new WaitForSeconds(5);
-        startVelocity = rb.velocity;
-        timerFinished = true;
-    }
-
-    private void FreezeCheck()
-    {
-        if (!isFrozen && availablePositions.Count > 0 && timerFinished)
+        if (startPositionsList.Count > 0)
         {
             Vector2 currentPosition = transform.position;
 
-            foreach (Vector2 position in availablePositions)
+            foreach (Vector2 position in startPositionsList)
             {
                 if (Vector2.Distance(currentPosition, position) < 0.05f) // Doesn't need to be exact just very close
                 {
-                    rb.velocity = Vector2.zero;
-                    //rb.constraints = RigidbodyConstraints2D.FreezePositionX | RigidbodyConstraints2D.FreezePositionY; // Freeze position
-                    isFrozen = true;
-                    availablePositions.Remove(position); // Remove to prevent conflict
+                    startPositionsList.Remove(position);
                     break;
                 }
             }
         }
     }
 
-    private void MoveTowardsTarget()
+    private void LerpTowardsTarget()
     {
-        Vector2 direction = (target - (Vector2)transform.position).normalized;
-        rb.velocity = direction * speed;
+        Vector2 desiredDirection = (target - (Vector2)transform.position).normalized;
+
+        Vector2 currentDirection = rb.velocity.normalized;
+
+        Vector2 newDirection = Vector2.Lerp(currentDirection, desiredDirection, Time.deltaTime * turningSpeed); // Lerp between the Vector2's to simulate a turning radius
+
+        rb.velocity = newDirection * speed;
     }
 
-    private void ReverseDirection()
+    private int CountChildrenWithTag(string tag)
     {
-        rb.velocity = -rb.velocity;
-    }
-
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        if (collision.gameObject.CompareTag("OrbitObject") && !isFrozen)
+        int count = 0;
+        foreach (Transform child in transform)
         {
-            GameObject collidedObject = collision.gameObject;
-
-            if (!collidedObjects.Contains(collidedObject))
+            if (child.CompareTag(tag))
             {
-                collidedObjects.Add(collidedObject);
-                isFrozen = false;
+                count++;
+            }
+        }
+        return count;
+    }
+
+    public enum ColorTags
+    {
+        Red,
+        Blue,
+        Green,
+        Yellow
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.gameObject.CompareTag("OrbitObject") || collision.gameObject.CompareTag(colorTags[(int)currentColorTag]))
+        {
+            Debug.Log(collision.gameObject);
+            GameObject collidedObject = collision.gameObject; // Define what collidedObject is
+
+            if (!orbitObjectedCollidedWith.Contains(collidedObject))
+            {
+                orbitObjectedCollidedWith.Add(collidedObject);
             }
 
-            Rigidbody2D rbCollidedWith = collidedObject.GetComponent<Rigidbody2D>();
+            Rigidbody2D rbCollidedWith = collidedObject.GetComponent<Rigidbody2D>(); // Define what rbCollidedWith is
 
             if (rbCollidedWith != null)
             {
-                if (collidedObjects.Count < 5 && !hasTarget)
+                if (orbitObjectedCollidedWith.Count < 5)
                 {
-                    target = collidedObjects[collidedObjects.Count].transform.position;
+                    GameObject bestTarget = null;
+                    int maxDifference = 0;
+                    bool foundBetterTarget = false;
 
-                    collidedObject.transform.parent = transform;
-                }     
-                   
-                if (collidedObjects.Count >= 5 && !hasTarget)
-                {
-                   // var redTarget // find object in collidedObjects list with tag red
+                    // Current color counts for this object
+                    int thisRedCount = CountChildrenWithTag("Red");
+                    int thisBlueCount = CountChildrenWithTag("Blue");
+                    int thisGreenCount = CountChildrenWithTag("Green");
+                    int thisYellowCount = CountChildrenWithTag("Yellow");
+
+                    foreach (GameObject orbitObject in orbitObjectedCollidedWith)
+                    {
+                        ColorsTargetingSystem otherColorTargetSystem = orbitObject.GetComponent<ColorsTargetingSystem>();
+                        if (otherColorTargetSystem != null)
+                        {
+                            // Calculate child counts for the collided object
+                            int otherRedCount = otherColorTargetSystem.CountChildrenWithTag("Red");
+                            int otherBlueCount = otherColorTargetSystem.CountChildrenWithTag("Blue");
+                            int otherGreenCount = otherColorTargetSystem.CountChildrenWithTag("Green");
+                            int otherYellowCount = otherColorTargetSystem.CountChildrenWithTag("Yellow");
+
+                            int totalDifference = 0;
+
+                            // Calculate differences for each color
+                            totalDifference += Mathf.Abs(thisRedCount - otherRedCount);
+                            totalDifference += Mathf.Abs(thisBlueCount - otherBlueCount);
+                            totalDifference += Mathf.Abs(thisGreenCount - otherGreenCount);
+                            totalDifference += Mathf.Abs(thisYellowCount - otherYellowCount);
+
+                            // Check if the total difference is the greatest found so far
+                            if (totalDifference > maxDifference)
+                            {
+                                maxDifference = totalDifference;
+                                bestTarget = orbitObject; // Set best target
+                                foundBetterTarget = true;
+                            }
+                            else if (totalDifference == maxDifference && foundBetterTarget)
+                            {
+                                if (Random.value < 0.5f)
+                                {
+                                    bestTarget = orbitObject;
+                                }
+                            }
+                        }
+                    }
+                    if (orbitObjectedCollidedWith.Count > 3)
+                    {
+                        target = bestTarget != null ? bestTarget.transform.position : orbitObjectedCollidedWith[orbitObjectedCollidedWith.Count - 2].transform.position;
+                    }
+
+                    collidedObject.transform.parent = transform.parent;
                 }
             }
         }
