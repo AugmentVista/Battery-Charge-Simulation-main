@@ -7,11 +7,8 @@ public class Orbit : MonoBehaviour
     // List of collided objects
     private List<GameObject> collidedObjects = new List<GameObject>();
 
-    public GameObject GoalOne;
-    public GameObject GoalTwo;
-    public GameObject GoalThree;
-
     private float speed = 4.0f;
+    private float numClicks = 0.0f;
     private float maxSpeed = 10.0f;
 
     private Vector2 target;
@@ -53,7 +50,7 @@ public class Orbit : MonoBehaviour
         {
             case 0:
                 target = 
-                rb.velocity = Vector2.left * speed;
+                rb.velocity = Vector2.left * (speed);
                 break;
             case 1:
                 rb.velocity = Vector2.right * speed;
@@ -88,19 +85,19 @@ public class Orbit : MonoBehaviour
         FreezeCheck();
     }
 
-    //void OnGUI()
-    //{
-    //    if (Input.GetMouseButtonDown(0)) // Get mouse position and set as target
-    //    {
-    //        Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-    //        target = mousePos; // target becomes mouse location on click
-    //        hasTarget = true;
-    //    }
-    //}
+    void OnGUI()
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            numClicks++;
+            speed = speed + numClicks;
+            SetInitialDirection();
+        }
+    }
 
     private IEnumerator ManagePositions()
     {
-        yield return new WaitForSeconds(2);
+        yield return new WaitForSeconds(5);
         startVelocity = rb.velocity;
         timerFinished = true;
     }
@@ -116,7 +113,7 @@ public class Orbit : MonoBehaviour
                 if (Vector2.Distance(currentPosition, position) < 0.05f) // Doesn't need to be exact just very close
                 {
                     rb.velocity = Vector2.zero;
-                    rb.constraints = RigidbodyConstraints2D.FreezePositionX | RigidbodyConstraints2D.FreezePositionY; // Freeze position
+                    //rb.constraints = RigidbodyConstraints2D.FreezePositionX | RigidbodyConstraints2D.FreezePositionY; // Freeze position
                     isFrozen = true;
                     availablePositions.Remove(position); // Remove to prevent conflict
                     break;
@@ -124,7 +121,6 @@ public class Orbit : MonoBehaviour
             }
         }
     }
-
 
     private void MoveTowardsTarget()
     {
@@ -143,43 +139,26 @@ public class Orbit : MonoBehaviour
         {
             GameObject collidedObject = collision.gameObject;
 
-            // Check isn't in the list
             if (!collidedObjects.Contains(collidedObject))
             {
                 collidedObjects.Add(collidedObject);
+                isFrozen = false;
             }
 
             Rigidbody2D rbCollidedWith = collidedObject.GetComponent<Rigidbody2D>();
 
             if (rbCollidedWith != null)
             {
-                int randomEffect = Random.Range(0, 2);
-                switch (randomEffect)
+                if (collidedObjects.Count < 5 && !hasTarget)
                 {
-                    case 0:
-                        if (collidedObjects.Count >= 4 && !hasTarget)
-                        {
-                            // Choose a random object in list of collided objects to be the new target
-                            int randomIndex = Random.Range(0, collidedObjects.Count);
-                            target = collidedObjects[randomIndex].transform.position;
-                            rb.velocity = rb.velocity * 1.5f;
-                            rbCollidedWith.velocity = rbCollidedWith.velocity * 1.5f;
+                    target = collidedObjects[collidedObjects.Count].transform.position;
 
-                            transform.parent = collidedObject.transform;
-                        }
-                        break;
-                    case 1:
-                        if (collidedObjects.Count >= 4 && !hasTarget)
-                        {
-                            // Choose a random object in list of collided objects to be the new target
-                            int randomIndex = Random.Range(0, collidedObjects.Count);
-                            target = collidedObjects[randomIndex].transform.position;
-                            rb.velocity = rb.velocity * 1f;
-                            rbCollidedWith.velocity = rbCollidedWith.velocity * 1f;
-
-                            transform.parent = collidedObject.transform;
-                        }
-                        break;
+                    collidedObject.transform.parent = transform;
+                }     
+                   
+                if (collidedObjects.Count >= 5 && !hasTarget)
+                {
+                   // var redTarget // find object in collidedObjects list with tag red
                 }
             }
         }
