@@ -12,9 +12,10 @@ public class ColorsTargetingSystem : MonoBehaviour
     void Start()
     {
         parentController = OrbitObject.GetComponent<Orbit>();
+        StartCoroutine(CheckForUnparentedCircles());
     }
 
-    private void OnTriggerEnter2D(Collider2D collision) 
+    private void OnTriggerEnter2D(Collider2D collision)
     {
         if (collision.gameObject.CompareTag("Red") ||
             collision.gameObject.CompareTag("Blue") ||
@@ -35,32 +36,70 @@ public class ColorsTargetingSystem : MonoBehaviour
         }
     }
 
+    private IEnumerator CheckForUnparentedCircles()
+    {
+        while (true)
+        {
+            foreach (Transform child in transform)
+            {
+                if (child == null || child.parent == null) 
+                {
+                    AssignCircleToClosestOrbit(child.gameObject);
+                }
+            }
+            yield return new WaitForSeconds(1f);
+        }
+    }
+
+    private void AssignCircleToClosestOrbit(GameObject circle)
+    {
+        // Logic to find the nearest Orbit object based on circle position and assign it
+        ColorsTargetingSystem[] allOrbitSystems = FindObjectsOfType<ColorsTargetingSystem>();
+        ColorsTargetingSystem closestSystem = null;
+        float closestDistance = float.MaxValue;
+
+        foreach (var orbitSystem in allOrbitSystems)
+        {
+            float distance = Vector2.Distance(circle.transform.position, orbitSystem.transform.position);
+            if (distance < closestDistance)
+            {
+                closestDistance = distance;
+                closestSystem = orbitSystem;
+            }
+        }
+
+        if (closestSystem != null)
+        {
+            if (circle.CompareTag(closestSystem.gameObject.tag))
+            {
+                circle.transform.SetParent(closestSystem.OrbitObject.transform, false);
+            }
+        }
+    }
+
     private void AssignChildBasedOnCount(GameObject childObject, int currentCount, int otherCount)
     {
         lock (this)
         {
-            // Randomly decide in case of a tie
             if (currentCount < otherCount)
             {
-                // Assign the child to this object's parent
-                childObject.transform.parent = OrbitObject.transform;
+                childObject.transform.SetParent(OrbitObject.transform.parent, false);
             }
             else if (currentCount > otherCount)
             {
-                // Assign the child to the other object's parent
                 ColorsTargetingSystem otherColorSystem = childObject.GetComponent<ColorsTargetingSystem>();
-                childObject.transform.parent = otherColorSystem.OrbitObject.transform;
+                childObject.transform.SetParent(otherColorSystem.OrbitObject.transform.parent, false);
             }
-            else 
+            else
             {
-                if (Random.value < 0.5f) // 50% chance to decide which parent to assign to
+                if (Random.value < 0.5f)
                 {
-                    childObject.transform.parent = OrbitObject.transform;
+                    childObject.transform.SetParent(OrbitObject.transform.parent, false);
                 }
                 else
                 {
                     ColorsTargetingSystem otherColorSystem = childObject.GetComponent<ColorsTargetingSystem>();
-                    childObject.transform.parent = otherColorSystem.OrbitObject.transform;
+                    childObject.transform.SetParent(otherColorSystem.OrbitObject.transform.parent, false);
                 }
             }
         }

@@ -9,13 +9,14 @@ public class Orbit : MonoBehaviour
 
     private List<GameObject> orbitObjectedCollidedWith = new List<GameObject>();
 
-    private float speed = 20.0f;
-    private float numClicks = 1.0f;
-    private float MaxSpeed = 40.0f;
+    public float speed = 20.0f;
+    public float MaxSpeed = 50.0f;
     private float velocityX;
     private float velocityY;
-    public float targetGoalRadius = 0.05f;
-    public float turningSpeed = 0.5f;
+    public float targetGoalRadius = 0.5f;
+    public float turningSpeed = 0.01f;
+    public float orbitRadius = 1.0f; 
+    public float angleSpeed = 20f;
 
     private Vector2 target;
     public Vector2 startingPosition;
@@ -26,7 +27,7 @@ public class Orbit : MonoBehaviour
     private bool timerFinished;
     private bool hasTarget;
 
-    public List<string> colorTags; // Adjusted to a List for flexibility
+    public List<string> colorTags;
     public ColorTags currentColorTag;
 
     private static List<Vector2> startPositionsList = new List<Vector2>();
@@ -37,14 +38,13 @@ public class Orbit : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         ApplyRandomDirection();
 
-        startPositionsList.Add(startingPosition); // add each orbit object's start pos to the collective static list
+        startPositionsList.Add(startingPosition);
         target = Vector2.zero;
         startVelocity = rb.velocity;
 
         colorTags = new List<string> { "Red", "Blue", "Green", "Yellow" };
-        currentColorTag = (ColorTags)Random.Range(0, colorTags.Count); // Choose a random starting color tag
+        currentColorTag = (ColorTags)Random.Range(0, colorTags.Count); 
 
-        // Start the coroutine to change the color tag
         StartCoroutine(ChangeColorTag());
     }
 
@@ -52,10 +52,7 @@ public class Orbit : MonoBehaviour
     {
         while (true)
         {
-            // Wait for 4 seconds
-            yield return new WaitForSeconds(4.0f);
-
-            // Change to the next color tag
+            yield return new WaitForSeconds(0.25f);
             currentColorTag = (ColorTags)(((int)currentColorTag + 1) % colorTags.Count); // Cycle through the color tags
         }
     }
@@ -66,16 +63,16 @@ public class Orbit : MonoBehaviour
         switch (randomDirection)
         {
             case 0:
-                rb.velocity = Vector2.left * (speed + numClicks);
+                rb.velocity = Vector2.left * speed;
                 break;
             case 1:
-                rb.velocity = Vector2.right * (speed + numClicks);
+                rb.velocity = Vector2.right * speed;
                 break;
             case 2:
-                rb.velocity = Vector2.up * (speed + numClicks);
+                rb.velocity = Vector2.up * speed;
                 break;
             case 3:
-                rb.velocity = Vector2.down * (speed + numClicks);
+                rb.velocity = Vector2.down * speed;
                 break;
         }
     }
@@ -87,52 +84,33 @@ public class Orbit : MonoBehaviour
             rb.velocity = rb.velocity.normalized * MaxSpeed;
         }
 
+        LerpTowardsTarget();
         if (hasTarget)
         {
-            LerpTowardsTarget();
-
             if (Vector2.Distance(transform.position, target) <= targetGoalRadius)
             {
-                hasTarget = false; // clear target when reached
+                hasTarget = false; 
             }
         }
-        OccupyingAnyStartPosition();
     }
 
     void OnGUI()
     {
         if (Input.GetMouseButtonDown(0))
         {
-            numClicks++;
-            speed = speed + numClicks;
             ApplyRandomDirection();
         }
     }
 
-    private void OccupyingAnyStartPosition()
-    {
-        if (startPositionsList.Count > 0)
-        {
-            Vector2 currentPosition = transform.position;
-
-            foreach (Vector2 position in startPositionsList)
-            {
-                if (Vector2.Distance(currentPosition, position) < 0.05f) // Doesn't need to be exact just very close
-                {
-                    startPositionsList.Remove(position);
-                    break;
-                }
-            }
-        }
-    }
 
     private void LerpTowardsTarget()
     {
         Vector2 desiredDirection = (target - (Vector2)transform.position).normalized;
 
-        Vector2 currentDirection = rb.velocity.normalized;
+        Vector2 orbitPosition = target + new Vector2(Mathf.Cos(Time.time) * orbitRadius, Mathf.Sin(Time.time) * orbitRadius);
 
-        Vector2 newDirection = Vector2.Lerp(currentDirection, desiredDirection, Time.deltaTime * turningSpeed); // Lerp between the Vector2's to simulate a turning radius
+        Vector2 currentDirection = rb.velocity.normalized;
+        Vector2 newDirection = Vector2.Lerp(currentDirection, (orbitPosition - (Vector2)transform.position).normalized, Time.deltaTime * turningSpeed);
 
         rb.velocity = newDirection * speed;
     }
@@ -205,11 +183,12 @@ public class Orbit : MonoBehaviour
                             totalDifference += Mathf.Abs(thisGreenCount - otherGreenCount);
                             totalDifference += Mathf.Abs(thisYellowCount - otherYellowCount);
 
-                            // Check if the total difference is the greatest found so far
                             if (totalDifference > maxDifference)
                             {
                                 maxDifference = totalDifference;
-                                bestTarget = orbitObject; // Set best target
+
+                                bestTarget = orbitObject; 
+
                                 foundBetterTarget = true;
                             }
                             else if (totalDifference == maxDifference && foundBetterTarget)
@@ -224,9 +203,8 @@ public class Orbit : MonoBehaviour
                     if (orbitObjectedCollidedWith.Count > 3)
                     {
                         target = bestTarget != null ? bestTarget.transform.position : orbitObjectedCollidedWith[orbitObjectedCollidedWith.Count - 2].transform.position;
+                        collidedObject.transform.parent = transform.parent;
                     }
-
-                    collidedObject.transform.parent = transform.parent;
                 }
             }
         }
