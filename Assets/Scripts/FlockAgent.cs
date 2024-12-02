@@ -2,12 +2,17 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+
+[RequireComponent(typeof(Collider2D))]
 public class FlockAgent : MonoBehaviour
 {
-    // Start is called before the first frame update
+    Collider2D agentCollider;
+    public Collider2D AgentCollider { get { return agentCollider; } }
+
+
     void Start()
     {
-        
+        agentCollider = GetComponent<Collider2D>();
     }
 
     // Update is called once per frame
