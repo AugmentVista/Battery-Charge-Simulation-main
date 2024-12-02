@@ -4,53 +4,66 @@ using UnityEngine;
 
 public class Orbit : MonoBehaviour
 {
-    // List of collided objects
-    private List<GameObject> collidedObjects = new List<GameObject>();
+    public ColorsTargetingSystem newColorTarget;
+    public ColorsTargetingSystem[] allColorTargets;
 
-    private float speed = 4.0f;
-    private float numClicks = 0.0f;
-    private float maxSpeed = 10.0f;
+    private List<GameObject> orbitObjectedCollidedWith = new List<GameObject>();
+
+    public float speed = 20.0f;
+    public float MaxSpeed = 50.0f;
+    private float velocityX;
+    private float velocityY;
+    public float targetGoalRadius = 0.5f;
+    public float turningSpeed = 0.01f;
+    public float orbitRadius = 1.0f; 
+    public float angleSpeed = 20f;
 
     private Vector2 target;
     public Vector2 startingPosition;
+    private Vector2 startVelocity;
 
     private Rigidbody2D rb;
-    private Rigidbody2D rbCollidedWith;
-    private Vector2 startVelocity;
 
     private bool timerFinished;
     private bool hasTarget;
-    private bool isFrozen = false;
 
-    public float targetGoalRadius;
+    public List<string> colorTags;
+    public ColorTags currentColorTag;
 
-
-    // Static list to hold starting positions across all instances
-    private static List<Vector2> availablePositions = new List<Vector2>();
-
+    private static List<Vector2> startPositionsList = new List<Vector2>();
 
     private void Start()
     {
         startingPosition = transform.position;
         rb = GetComponent<Rigidbody2D>();
-        SetInitialDirection();
+        ApplyRandomDirection();
 
+        startPositionsList.Add(startingPosition);
         target = Vector2.zero;
-        hasTarget = false;
-
-        availablePositions.Add(startingPosition);
         startVelocity = rb.velocity;
-        StartCoroutine(ManagePositions());
+
+        colorTags = new List<string> { "Red", "Blue", "Green", "Yellow" };
+        currentColorTag = (ColorTags)Random.Range(0, colorTags.Count); 
+
+        StartCoroutine(ChangeColorTag());
     }
 
-    private void SetInitialDirection()
+    private IEnumerator ChangeColorTag()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(0.25f);
+            currentColorTag = (ColorTags)(((int)currentColorTag + 1) % colorTags.Count); // Cycle through the color tags
+        }
+    }
+
+    private void ApplyRandomDirection()
     {
         int randomDirection = Random.Range(0, 4);
         switch (randomDirection)
         {
             case 0:
-                target = 
-                rb.velocity = Vector2.left * (speed);
+                rb.velocity = Vector2.left * speed;
                 break;
             case 1:
                 rb.velocity = Vector2.right * speed;
@@ -64,101 +77,134 @@ public class Orbit : MonoBehaviour
         }
     }
 
-    private void Update()
+    private void FixedUpdate()
     {
-        if (rb.velocity.magnitude > maxSpeed)
+        if (rb.velocity.magnitude > MaxSpeed)
         {
-            rb.velocity = rb.velocity.normalized * maxSpeed; // Clamp the velocity to maxSpeed
+            rb.velocity = rb.velocity.normalized * MaxSpeed;
         }
 
-        if (hasTarget && !isFrozen)
+        LerpTowardsTarget();
+        if (hasTarget)
         {
-            MoveTowardsTarget();
-
             if (Vector2.Distance(transform.position, target) <= targetGoalRadius)
             {
-                ReverseDirection();
-                hasTarget = false; // clear target when reached
+                hasTarget = false; 
             }
         }
-        Debug.Log("Current Position: " + transform.position);
-        FreezeCheck();
     }
 
     void OnGUI()
     {
         if (Input.GetMouseButtonDown(0))
         {
-            numClicks++;
-            speed = speed + numClicks;
-            SetInitialDirection();
+            ApplyRandomDirection();
         }
     }
 
-    private IEnumerator ManagePositions()
+
+    private void LerpTowardsTarget()
     {
-        yield return new WaitForSeconds(5);
-        startVelocity = rb.velocity;
-        timerFinished = true;
+        Vector2 desiredDirection = (target - (Vector2)transform.position).normalized;
+
+        Vector2 orbitPosition = target + new Vector2(Mathf.Cos(Time.time) * orbitRadius, Mathf.Sin(Time.time) * orbitRadius);
+
+        Vector2 currentDirection = rb.velocity.normalized;
+        Vector2 newDirection = Vector2.Lerp(currentDirection, (orbitPosition - (Vector2)transform.position).normalized, Time.deltaTime * turningSpeed);
+
+        rb.velocity = newDirection * speed;
     }
 
-    private void FreezeCheck()
+    private int CountChildrenWithTag(string tag)
     {
-        if (!isFrozen && availablePositions.Count > 0 && timerFinished)
+        int count = 0;
+        foreach (Transform child in transform)
         {
-            Vector2 currentPosition = transform.position;
-
-            foreach (Vector2 position in availablePositions)
+            if (child.CompareTag(tag))
             {
-                if (Vector2.Distance(currentPosition, position) < 0.05f) // Doesn't need to be exact just very close
-                {
-                    rb.velocity = Vector2.zero;
-                    //rb.constraints = RigidbodyConstraints2D.FreezePositionX | RigidbodyConstraints2D.FreezePositionY; // Freeze position
-                    isFrozen = true;
-                    availablePositions.Remove(position); // Remove to prevent conflict
-                    break;
-                }
+                count++;
             }
         }
+        return count;
     }
 
-    private void MoveTowardsTarget()
+    public enum ColorTags
     {
-        Vector2 direction = (target - (Vector2)transform.position).normalized;
-        rb.velocity = direction * speed;
+        Red,
+        Blue,
+        Green,
+        Yellow
     }
 
-    private void ReverseDirection()
+    private void OnTriggerEnter2D(Collider2D collision)
     {
-        rb.velocity = -rb.velocity;
-    }
-
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        if (collision.gameObject.CompareTag("OrbitObject") && !isFrozen)
+        if (collision.gameObject.CompareTag("OrbitObject") || collision.gameObject.CompareTag(colorTags[(int)currentColorTag]))
         {
-            GameObject collidedObject = collision.gameObject;
+            Debug.Log(collision.gameObject);
+            GameObject collidedObject = collision.gameObject; // Define what collidedObject is
 
-            if (!collidedObjects.Contains(collidedObject))
+            if (!orbitObjectedCollidedWith.Contains(collidedObject))
             {
-                collidedObjects.Add(collidedObject);
-                isFrozen = false;
+                orbitObjectedCollidedWith.Add(collidedObject);
             }
 
-            Rigidbody2D rbCollidedWith = collidedObject.GetComponent<Rigidbody2D>();
+            Rigidbody2D rbCollidedWith = collidedObject.GetComponent<Rigidbody2D>(); // Define what rbCollidedWith is
 
             if (rbCollidedWith != null)
             {
-                if (collidedObjects.Count < 5 && !hasTarget)
+                if (orbitObjectedCollidedWith.Count < 5)
                 {
-                    target = collidedObjects[collidedObjects.Count].transform.position;
+                    GameObject bestTarget = null;
+                    int maxDifference = 0;
+                    bool foundBetterTarget = false;
 
-                    collidedObject.transform.parent = transform;
-                }     
-                   
-                if (collidedObjects.Count >= 5 && !hasTarget)
-                {
-                   // var redTarget // find object in collidedObjects list with tag red
+                    // Current color counts for this object
+                    int thisRedCount = CountChildrenWithTag("Red");
+                    int thisBlueCount = CountChildrenWithTag("Blue");
+                    int thisGreenCount = CountChildrenWithTag("Green");
+                    int thisYellowCount = CountChildrenWithTag("Yellow");
+
+                    foreach (GameObject orbitObject in orbitObjectedCollidedWith)
+                    {
+                        ColorsTargetingSystem otherColorTargetSystem = orbitObject.GetComponent<ColorsTargetingSystem>();
+                        if (otherColorTargetSystem != null)
+                        {
+                            // Calculate child counts for the collided object
+                            int otherRedCount = otherColorTargetSystem.CountChildrenWithTag("Red");
+                            int otherBlueCount = otherColorTargetSystem.CountChildrenWithTag("Blue");
+                            int otherGreenCount = otherColorTargetSystem.CountChildrenWithTag("Green");
+                            int otherYellowCount = otherColorTargetSystem.CountChildrenWithTag("Yellow");
+
+                            int totalDifference = 0;
+
+                            // Calculate differences for each color
+                            totalDifference += Mathf.Abs(thisRedCount - otherRedCount);
+                            totalDifference += Mathf.Abs(thisBlueCount - otherBlueCount);
+                            totalDifference += Mathf.Abs(thisGreenCount - otherGreenCount);
+                            totalDifference += Mathf.Abs(thisYellowCount - otherYellowCount);
+
+                            if (totalDifference > maxDifference)
+                            {
+                                maxDifference = totalDifference;
+
+                                bestTarget = orbitObject; 
+
+                                foundBetterTarget = true;
+                            }
+                            else if (totalDifference == maxDifference && foundBetterTarget)
+                            {
+                                if (Random.value < 0.5f)
+                                {
+                                    bestTarget = orbitObject;
+                                }
+                            }
+                        }
+                    }
+                    if (orbitObjectedCollidedWith.Count > 3)
+                    {
+                        target = bestTarget != null ? bestTarget.transform.position : orbitObjectedCollidedWith[orbitObjectedCollidedWith.Count - 2].transform.position;
+                        collidedObject.transform.parent = transform.parent;
+                    }
                 }
             }
         }

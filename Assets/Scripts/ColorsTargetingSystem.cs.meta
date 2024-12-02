@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/Scripts/Flock.cs.meta
+guid: 5799cc58025e5c34fa6202a762b2c267
+========
+guid: d48d758297287fe4dad8d5613696570b
+>>>>>>>> 0afed7d03b1ccc86f44467ea1547728f56a48715:Assets/Scripts/ColorsTargetingSystem.cs.meta
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

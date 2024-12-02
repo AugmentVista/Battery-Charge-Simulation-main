@@ -1,5 +1,9 @@
 fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/Scripts/Flock.cs.meta
 guid: 8f248d632bbc21d4d8f0b3194eb8f72f
+========
+guid: d48d758297287fe4dad8d5613696570b
+>>>>>>>> 0afed7d03b1ccc86f44467ea1547728f56a48715:Assets/Scripts/ColorsTargetingSystem.cs.meta
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
