@@ -11,7 +11,7 @@ public class Flock : MonoBehaviour
 
     [Range(10, 500)]
     public int startingCount = 100;
-    const float AgentDensity = 0.20f;
+    const float AgentDensity = 0.3f;
 
     [Range(1f, 100f)]
     public float driveFactor = 10f;
@@ -37,11 +37,11 @@ public class Flock : MonoBehaviour
 
         for (int i = 0; i < startingCount; i++)
         {
-            FlockAgent newAgent = Instantiate(agentPrefab, Random.insideUnitCircle * startingCount * AgentDensity, Quaternion.Euler(Vector3.forward * Random.Range(0f, 360f)), transform);
+            FlockAgent newAgent = Instantiate(agentPrefab, Random.insideUnitCircle * startingCount * AgentDensity, 
+                Quaternion.Euler(Vector3.forward * Random.Range(0f, 360f)), transform);
             newAgent.name = $"Agent{i}";
             newAgent.Init(this);
             agents.Add(newAgent);
-
         }
     }
 
@@ -51,8 +51,6 @@ public class Flock : MonoBehaviour
         { 
             List<Transform> context = GetNearByObjects(agent);
 
-            //agent.GetComponentInChildren<SpriteRenderer>().color = Color.Lerp(Color.white, Color.red, context.Count / 6f);
-
             Vector2 move = behavior.CalculateMove(agent, context, this);
             move *= driveFactor;
             if (move.sqrMagnitude > squareMaxSpeed) { move = move.normalized * maxSpeed; }
@@ -60,20 +58,17 @@ public class Flock : MonoBehaviour
         }
     }
 
-
     List<Transform> GetNearByObjects(FlockAgent agent)
     { 
         List<Transform> context = new List<Transform>();
         Collider2D[] contextColliders = Physics2D.OverlapCircleAll(agent.transform.position, neighborRadius);
-        foreach (Collider2D c in contextColliders)
+        foreach (Collider2D colliders in contextColliders)
         {
-            if (c != agent.AgentCollider)
+            if (colliders != agent.AgentCollider)
             {
-                context.Add(c.transform);
+                context.Add(colliders.transform);
             }
         }
         return context;
     }
-
-
 }

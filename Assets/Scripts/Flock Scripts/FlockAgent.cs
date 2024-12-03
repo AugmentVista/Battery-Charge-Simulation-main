@@ -2,17 +2,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-
 [RequireComponent(typeof(Collider2D))]
 public class FlockAgent : MonoBehaviour
 {
-
     Flock agentFlock;
     public Flock AgentFlock { get { return agentFlock; } }
 
     Collider2D agentCollider;
     public Collider2D AgentCollider { get { return agentCollider; } }
-
 
     void Start()
     {
