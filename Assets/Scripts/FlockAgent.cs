@@ -15,9 +15,9 @@ public class FlockAgent : MonoBehaviour
         agentCollider = GetComponent<Collider2D>();
     }
 
-    // Update is called once per frame
-    void Update()
+    public void Move(Vector2 velocity)
     {
-        
+        transform.up = velocity;
+        transform.position += (Vector3)velocity * Time.deltaTime;
     }
 }

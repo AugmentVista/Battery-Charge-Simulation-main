@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class WrapAround : MonoBehaviour
 {
-    private Rigidbody2D rb;
     public Camera gameCamera;
 
     private float objectWidth;
@@ -12,10 +11,9 @@ public class WrapAround : MonoBehaviour
 
     void Start()
     {
-        rb = GetComponent<Rigidbody2D>();
-
+        gameCamera = FindAnyObjectByType<Camera>();
         // Get the object's size based on its renderer bounds
-        SpriteRenderer renderer = GetComponent<SpriteRenderer>();
+        SpriteRenderer renderer = GetComponentInChildren<SpriteRenderer>();
         objectWidth = renderer.bounds.size.x ;  // Half the width
         objectHeight = renderer.bounds.size.y ; // Half the height
     }
