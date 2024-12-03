@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-
 [CreateAssetMenu(menuName = "FlockBehavior_Avoidance")]
 public class Avoid_Obstacles : FilteredFlockBehavior
 {

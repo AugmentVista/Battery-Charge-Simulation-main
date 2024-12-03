@@ -64,6 +64,12 @@ public class WrapAround : MonoBehaviour
         if (isWrappingX || isWrappingY)
         {
             transform.position = thisObjectsPosition;
+
+            ObstaclesMovement obstaclesMovement = GetComponent<ObstaclesMovement>();
+            if (obstaclesMovement != null)
+            {
+                obstaclesMovement.obstacleSpeed *= -1;
+            }
         }
     }
 }

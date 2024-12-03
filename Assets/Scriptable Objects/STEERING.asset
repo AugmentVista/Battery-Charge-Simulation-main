@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: STEERING
   m_EditorClassIdentifier: 
   filter: {fileID: 11400000, guid: 61692c7660c181c43b9759615e07dd7b, type: 2}
-  agentSmoothTime: 7
+  agentSmoothTime: 2

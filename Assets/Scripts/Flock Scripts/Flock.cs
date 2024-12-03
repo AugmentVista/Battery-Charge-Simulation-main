@@ -1,6 +1,4 @@
-using System.Collections;
 using System.Collections.Generic;
-using Unity.Burst.CompilerServices;
 using UnityEngine;
 
 public class Flock : MonoBehaviour
@@ -11,7 +9,7 @@ public class Flock : MonoBehaviour
 
     [Range(10, 500)]
     public int startingCount = 100;
-    const float AgentDensity = 0.3f;
+    const float AgentDensity = 0.8f;
 
     [Range(1f, 100f)]
     public float driveFactor = 10f;
